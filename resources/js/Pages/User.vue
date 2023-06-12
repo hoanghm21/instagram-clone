@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { reactive, toRefs } from 'vue';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import ContentOverlay from '@/Components/ContentOverlay.vue'
+import ShowPostOverlay from '@/Components/ShowPostOverlay.vue';
 
 import Cog from 'vue-material-design-icons/Cog.vue'
 import Grid from 'vue-material-design-icons/Grid.vue'
@@ -15,6 +16,67 @@ const form = reactive({file: null})
 
 const props = defineProps({postByUser: Object, user: Object})
 const { postByUser, user } = toRefs(props)
+
+const addComment = (object) => {
+    router.post('/comments', {
+        post_id: object.post.id,
+        user_id: object.user.id,
+        comment: object.comment
+    }, {
+        onFinish: () => updatePost(object),
+    })
+}
+
+const deleteFunc = (object) => {
+    let url = ''
+    if (object.deleteType === 'Post') {
+        url = '/posts/' + object.id
+        setTimeout(() => {
+            data.post = null
+        }, 100);
+    } else {
+        url = '/comments/' + object.id
+    }
+
+    router.delete(url, {
+        onFinish: () => updatePost(object),
+    })
+}
+
+const updateLike = (object) => {
+    let deleteLike =false
+    let id = null
+
+    for (let i = 0; i < object.post.likes.length; i++) {
+        const like = object.post.likes[i];
+        if (like.user_id === object.user.id && like.post_id === object.post.id) {
+            deleteLike = true
+            id = like.id
+        }
+    }
+
+    if (deleteLike) {
+        router.delete('/likes/' + id, {
+            onFinish: () => updatePost(object),
+        })
+    } else {
+        router.post('/likes', {
+            post_id: object.post.id,
+        }
+        ,{
+            onFinish: () => updatePost(object),
+        })
+    }
+}
+
+const updatePost = (object) => {
+    for (let i = 0; i < postsByUser.value.data.length; i++) {
+        const post = postsByUser.value.data[i];
+        if (post.id === object.post.id) {
+            data.post = post;
+        }
+    }
+}
 
 const getUploadedImage = (e) => {
     form.file = e.target.files[0]
@@ -34,11 +96,12 @@ const getUploadedImage = (e) => {
             <div class="flex items-center md:justify-between">
 
                 <label for="fileUser">
-                    <img src="https://picsum.photos/id/50/200/200"
+                    <img :src="user.file"
                         class="rounded-full object-fit md:w-[200px] w-[100px]
                         cursor-pointer">
                 </label>
-                <input 
+                <input
+                    v-if="user.id === $page.props.auth.user.id"
                     type="file" 
                     id="fileUser" 
                     class="hidden" 
@@ -48,7 +111,7 @@ const getUploadedImage = (e) => {
                 <div class="ml-6 w-full">
                     <div class="flex items-center md:mb-8 mb-5">
                         <div class="md:mr-6 mr-3 rounded-lg text-[22px]">
-                            NAME HERE
+                            {{ user.name }}
                         </div>
                         <button class="
                             md:mr-6
@@ -83,7 +146,7 @@ const getUploadedImage = (e) => {
                     <div class="md:block hidden">
                         <div class="flex item-center text-[18px]">
                             <div class="mr-6">
-                                <span class="font-extrabold">4</span>  posts
+                                <span class="font-extrabold">{{ postsByUser.data.length }}</span>  posts
                             </div>
                             <div class="mr-6">
                                 <span class="font-extrabold">123</span>  followers
@@ -103,7 +166,7 @@ const getUploadedImage = (e) => {
                 border-t border-t-gray-300 mt-8"
             >
                 <div class="text-center p-3">
-                    <div class="font-extrabold">4</div>
+                    <div class="font-extrabold">{{ postsByUser.data.length }}</div>
                     <div class="text-gray-400 font-semibold -mt-1.5">posts</div>
                 </div>
                 <div class="text-center p-3">
@@ -155,14 +218,28 @@ const getUploadedImage = (e) => {
             </div>
 
             <div class="grid md:gap-4 gap-1 grid-cols-3 relative">
-                <ContentOverlay
-                    :postByUser="postByUser"
-                    @selectedPost="data.post = $event"
+                <div v-for="postByUser in postsByUser.data" :key="postByUser">
+                    <ContentOverlay
+                        :postByUser="postByUser"
+                        @selectedPost="data.post = $event"
                 />
+                </div>
             </div>
+
+            <div class="pb-20"></div>
         </div>
     </MainLayout>
 
+    <ShowPostOverlay 
+        v-if="data.post"
+        :post="data.post"
+        @addComment="addComment($event)"
+        @updateLike="updateLike($event)"
+        @deleteSelected="
+            deleteFunc($event);
+        "
+        @closeOverlay="data.post = null"
+    />
 </template>
 
 <style>

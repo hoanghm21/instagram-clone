@@ -38,23 +38,26 @@ const textareaInput = (e) => {
             <div class="w-full md:flex h-full overflow-auto rounded-xl">
                 <div class="flex items-center bg-black w-full">
                     <img
-                        src="https://picsum.photos/id/54/800/820"
-                        class="rounded-xl min-w-[400px] p-4 mx-auto">
+                        :src="post.file"
+                        class="rounded-xl min-w-[400px] p-4 mx-auto max-w-[476px]">
                 </div>
 
                 <div class="md:max-w-[500px] w-full relative">
                     <div class="flex items-center justify-between p-3 border-b">
                         <div class="flex items-center">
                             <img
-                                src="https://picsum.photos/id/54/800/820"
+                                :src="post.user.file"
                                 class="rounded-full w-[38px] h-[38px]">
-                            <div class="ml-4 font-extrabold text-[15px]">NAME HERE</div>
+                            <div class="ml-4 font-extrabold text-[15px]">{{ post.user.name }}</div>
                             <div class="flex items-center text-[15px] text-gray-500">
                                 <span class="-mt-5 ml-2 mr-[5px] text-[35px]">.</span>
-                                <div>DATE HERE</div>
+                                <div>{{ post.created_at }}</div>
                             </div>
                         </div>
-                        <button>
+                        <button
+                            v-if="user.id === post.user.id"
+                            @click="deleteType = 'Post'; id = post.id"
+                        >
                             <DotsHorizontal class="cursor-pointer" :size="27"/>
                         </button>
                     </div>
@@ -63,45 +66,60 @@ const textareaInput = (e) => {
                         <div class="flex items-center justify-between p-3">
                             <div class="flex items-center relative">
                                 <img
-                                    src="https://picsum.photos/id/54/800/820"
+                                    :src="post.user.file"
                                     class="absolute -top-1 rounded-full w-[38px] h-[38px]">
                                 <div class="ml-14">
                                     <span class="font-extrabold text-[15px] mr-2">
-                                        NAME HERE
+                                        {{ post.user.name }}
                                     </span>
                                     <span class="text-[15px] text-gray-900">
-                                        THIS IS A COMMENT
+                                        {{ post.text }}
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-3">
+                        <div
+                            v-if="post.comments"
+                            v-for="comment in post.comments"
+                            :key="comment"
+                            class="p-3"
+                        >
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
                                     <img
-                                        src="https://picsum.photos/id/54/800/820"
+                                        :src="comment.user.file"
                                         class="rounded-full w-[38px] h-[38px]">
                                     <div class="ml-4 font-extrabold text-[15px]">
-                                        NAME HERE
+                                        {{ comment.user.name }}
                                         <span class="font-light text-gray-700 text-sm">
-                                            DATE HERE
+                                            {{ post.created_at }}
                                         </span>
                                     </div>
                                 </div>
 
-                                <DotsHorizontal class="cursor-pointer" :size="27"/>
+                                <DotsHorizontal 
+                                    v-if="user.id === comment.user.id"
+                                    class="cursor-pointer" 
+                                    :size="27"
+                                    @click="deleteType = 'Comment'; id = comment.id"
+                                />
                             </div>
 
                             <div class="text-[13px] pl-[55px]">
-                                THIS COMMENT SECTION
+                                {{ comment.text }}
                             </div>
                         </div>
 
                         <div class="pb-16 md:hidden"></div>
                     </div>
 
-                    <LikesSection class="px-2 border-t mb-2" />
+                    <LikesSection
+                        v-if="post"
+                        class="px-2 border-t mb-2"
+                        :post="post"
+                        @like="$emit('updateLike', $event)"
+                    />
 
                     <div class="absolute flex border bottom-0 w-full max-h-[200px] 
                         bg-white overflow-auto">
@@ -124,6 +142,10 @@ const textareaInput = (e) => {
                         <button
                             v-if="comment"
                             class="text-blue-600 font-extrabold pr-4"
+                            @click="
+                                $emit('addComment', { post, user, comment });
+                                comment = ''
+                            "
                         >
                             Post
                         </button>
@@ -133,5 +155,19 @@ const textareaInput = (e) => {
         </div>
     </div>
 
-    <ShowPostOptionsOverlay v-if="deleteType" />
+    <ShowPostOptionsOverlay 
+        v-if="deleteType"
+        :deleteType="deleteType"
+        :id="id"
+        @deleteSelected="
+            $emit('deleteSelected', {
+                deleteType: $event.deleteType,
+                id: $event.id,
+                post: post,
+            })
+            deleteType = null;
+            id = null;
+        "
+        @close="deleteType = null; id = null"
+    />
 </template>

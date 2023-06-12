@@ -77,7 +77,9 @@ const getUploadedImage = (e) => {
                 border-b border-b-gray-300">
                 <ArrowLeft :size="30" fillColor="#000" @click="closeOverlay()"/>
                 <div class="text-lg font-extrabold">New reel</div>
-                <button class="text-lg text-blue-500 hover:text-gray-900 font-extrabold">
+                <button
+                    @click="createPostFunc()"
+                    class="text-lg text-blue-500 hover:text-gray-900 font-extrabold">
                     Share
                 </button>
             </div>
@@ -104,7 +106,7 @@ const getUploadedImage = (e) => {
                             File not accepted
                         </div>
                     </div>
-                    <img v-if="fileDisplay && isValidFile === true" class="min-w-[400px] p-4 mx-auto" :src="fileDisplay">
+                    <img v-if="fileDisplay && isValidFile === true" class="min-w-[400px] p-4 mx-auto max-w-[476px]" :src="fileDisplay">
                 </div>
 
                 <div id="TextAreaSection" class="max-w-[720px] w-full relative">
